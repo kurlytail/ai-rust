@@ -20,3 +20,20 @@ impl Agent for LocalAgent {
         .boxed()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Agent;
+    use super::LocalAgent;
+    use crate::agent::request::CreateAgentRequest;
+    use tokio::sync::mpsc;
+
+    #[tokio::test]
+    async fn test_local_agent_initialization() {
+        let (sender, _receiver) = mpsc::channel::<CreateAgentRequest>(100);
+        let goals = vec![String::from("Test goal 1"), String::from("Test goal 2")];
+        let agent = LocalAgent::new(goals.clone(), sender);
+
+        assert_eq!(*agent.goals, goals);
+    }
+}
