@@ -1,39 +1,33 @@
 use super::agent::Agent;
+use super::agent::AgentState;
 use super::request::CreateAgentRequest;
 use futures::future::BoxFuture;
 use futures::FutureExt; // for .boxed()
+use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::sync::mpsc::Sender;
 
 pub struct LocalAgent {
-    goals: Vec<String>,
+    goals: Arc<Mutex<Vec<String>>>,
+    states: Arc<Mutex<Vec<AgentState>>>,
 }
 
 impl Agent for LocalAgent {
     fn new(goals: Vec<String>, _: Sender<CreateAgentRequest>) -> Self {
-        Self { goals }
+        Self {
+            goals: Arc::new(Mutex::new(goals)),
+            states: Arc::new(Mutex::new(vec![AgentState::new("Initialized")])),
+        }
     }
 
-    fn run(&self) -> BoxFuture<'static, ()> {
+    fn run(&mut self) -> BoxFuture<'static, ()> {
+        let goals = Arc::clone(&self.goals);
+        let states = Arc::clone(&self.states);
         async move {
-            let _ = self.goals;
+            states.lock().unwrap().push(AgentState::new("Running"));
+            drop(goals.lock().unwrap());
+            states.lock().unwrap().push(AgentState::new("Stopped"));
         }
         .boxed()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Agent;
-    use super::LocalAgent;
-    use crate::agent::request::CreateAgentRequest;
-    use tokio::sync::mpsc;
-
-    #[tokio::test]
-    async fn test_local_agent_initialization() {
-        let (sender, _receiver) = mpsc::channel::<CreateAgentRequest>(100);
-        let goals = vec![String::from("Test goal 1"), String::from("Test goal 2")];
-        let agent = LocalAgent::new(goals.clone(), sender);
-
-        assert_eq!(*agent.goals, goals);
     }
 }

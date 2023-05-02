@@ -1,4 +1,5 @@
 use super::agent::Agent;
+use super::agent::AgentState;
 use super::request::CreateAgentRequest;
 use async_trait::async_trait;
 use futures::future::BoxFuture;
@@ -8,11 +9,13 @@ use serde_json::json;
 use serde_json::Value;
 use std::env;
 use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::sync::mpsc::Sender;
 
 pub struct OpenAIAgent {
     client: reqwest::Client,
-    goals: Arc<Vec<String>>,
+    goals: Arc<Mutex<Vec<String>>>,
+    states: Arc<Mutex<Vec<AgentState>>>,
     openai_key: String,
 }
 
@@ -22,23 +25,28 @@ impl Agent for OpenAIAgent {
         let openai_key = env::var("OPENAI_KEY").expect("OPENAI_KEY must be set");
         Self {
             client: reqwest::Client::new(),
-            goals: Arc::new(goals),
             openai_key,
+            goals: Arc::new(Mutex::new(goals)),
+            states: Arc::new(Mutex::new(vec![AgentState::new("Initialized")])),
         }
     }
 
-    fn run(&self) -> BoxFuture<'static, ()> {
+    fn run(&mut self) -> BoxFuture<'static, ()> {
         let goals = Arc::clone(&self.goals);
+        let states = Arc::clone(&self.states);
         let client = self.client.clone();
         let openai_key = self.openai_key.clone();
 
         async move {
-            for goal in &*goals {
-                match OpenAIAgent::interact(&client, &openai_key, goal).await {
+            states.lock().unwrap().push(AgentState::new("Running"));
+            let goals = goals.lock().unwrap().clone();
+            for goal in goals {
+                match OpenAIAgent::interact(&client, &openai_key, &goal).await {
                     Ok(response) => println!("{:#?}", response),
                     Err(e) => eprintln!("Error: {}", e),
                 }
             }
+            states.lock().unwrap().push(AgentState::new("Stopped"));
         }
         .boxed()
     }
