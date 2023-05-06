@@ -1,7 +1,4 @@
-use super::request::CreateAgentRequest;
-use futures::future::BoxFuture;
 use std::time::SystemTime;
-use tokio::sync::mpsc::Sender;
 
 pub struct AgentState {
     state: String,
@@ -17,10 +14,24 @@ impl AgentState {
     }
 }
 
-#[async_trait::async_trait]
-pub trait Agent {
-    fn new(goals: Vec<String>, create_agent_sender: Sender<CreateAgentRequest>) -> Self
-    where
-        Self: Sized;
-    fn run(&mut self) -> BoxFuture<'static, ()>;
+pub enum AgentType {
+    Cli,
+    Local,
+    OpenAI,
+}
+
+pub struct Agent {
+    pub agent_type: AgentType,
+    pub goals: Vec<String>,
+    pub states: Vec<AgentState>,
+}
+
+impl Agent {
+    pub fn new(agent_type: AgentType, goals: Vec<String>) -> Self {
+        Self {
+            agent_type,
+            goals,
+            states: vec![AgentState::new("Initialized")],
+        }
+    }
 }

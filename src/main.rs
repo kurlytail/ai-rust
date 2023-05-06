@@ -10,7 +10,7 @@ async fn main() {
     let mut agent_registry = AgentRegistry::new();
 
     agent_registry.register(
-        "OpenAI",
+        agent::agent::AgentType::OpenAI,
         "OpenAI Agent",
         vec![
             String::from("Translate 'Hello, world!' to French."),
@@ -19,7 +19,7 @@ async fn main() {
     );
 
     agent_registry.register(
-        "Local",
+        agent::agent::AgentType::Local,
         "Local Agent",
         vec![
             // ... goals ...

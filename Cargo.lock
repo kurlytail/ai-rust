@@ -6,9 +6,11 @@ version = 3
 name = "ai-rust"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "dotenv",
  "futures",
+ "futures-util",
  "prettytable-rs",
  "reqwest",
  "rustyline",
@@ -16,6 +18,12 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
+
+[[package]]
+name = "anyhow"
+version = "1.0.71"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
 
 [[package]]
 name = "async-trait"
